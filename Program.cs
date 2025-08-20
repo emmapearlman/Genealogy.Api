@@ -24,6 +24,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Register GedcomApiClient (ensure you have a suitable HttpClient registration)
+builder.Services.AddHttpClient<GedcomApiClient>();
+
 var app = builder.Build();
 
 // Auto-migrate and seed minimal demo data
