@@ -1,6 +1,7 @@
 using Genealogy.Api.Data;
 using Genealogy.Api.Dtos;
 using Genealogy.Api.Models;
+using Genealogy.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +12,12 @@ namespace Genealogy.Api.Controllers;
 public class PeopleController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly GedcomExportService _gedcomExportService;
 
-    public PeopleController(AppDbContext db)
+    public PeopleController(AppDbContext db, GedcomExportService gedcomExportService)
     {
         _db = db;
+        _gedcomExportService = gedcomExportService;
     }
 
     /// <summary>
@@ -88,5 +91,22 @@ public class PeopleController : ControllerBase
         _db.People.Remove(p);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    /// <summary>
+    /// Exports all people as a GEDCOM document.
+    /// </summary>
+    [HttpGet("gedcom")]
+    public async Task<IActionResult> GetGedcom()
+    {
+        var gedcomContent = await _gedcomExportService.ExportToGedcomAsync();
+        
+        var fileName = $"genealogy_export_{DateTime.Now:yyyyMMdd_HHmmss}.ged";
+        
+        return File(
+            System.Text.Encoding.UTF8.GetBytes(gedcomContent),
+            "text/plain",
+            fileName
+        );
     }
 }

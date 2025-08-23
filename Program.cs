@@ -10,6 +10,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlite("Data Source=genealogy.db"));
 
 builder.Services.AddScoped<TreeService>();
+builder.Services.AddScoped<GedcomExportService>();
 
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
