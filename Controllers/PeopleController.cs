@@ -1,92 +1,51 @@
-using Genealogy.Api.Data;
-using Genealogy.Api.Dtos;
-using Genealogy.Api.Models;
+using Genealogy.Api.Dto;
+using Genealogy.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Genealogy.Api.Controllers;
 
 [ApiController]
-[Route("people")]
+[Route("api/[controller]")]
 public class PeopleController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IFamilyTreeService _svc;
+    public PeopleController(IFamilyTreeService svc) => _svc = svc;
 
-    public PeopleController(AppDbContext db)
+    // GET: /api/people/5
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<PersonDto>> GetPerson(int id)
     {
-        _db = db;
+        var person = await _svc.GetPersonAsync(id);
+        return person is null ? NotFound() : Ok(person);
     }
 
-    /// <summary>
-    /// Gets a paginated list of people, optionally filtered by search term.
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetPeople([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    // GET: /api/people/5/ancestors?generations=3&includeSpouses=true
+    [HttpGet("{id:int}/ancestors")]
+    public async Task<ActionResult<TreeNodeDto>> GetAncestors(
+        int id, [FromQuery] int generations = 3, [FromQuery] bool includeSpouses = true)
     {
-        var query = _db.People.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.Trim();
-            query = query.Where(p => EF.Functions.Like(p.GivenName, $"%{s}%") ||
-                                     EF.Functions.Like(p.Surname, $"%{s}%"));
-        }
-
-        var total = await query.CountAsync();
-        var items = await query
-            .OrderBy(p => p.Surname).ThenBy(p => p.GivenName)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(p => p.ToReadDto()).ToListAsync();
-
-        return Ok(new { total, page, pageSize, items });
+        if (generations < 0 || generations > 10) return BadRequest("Generations must be between 0 and 10.");
+        var tree = await _svc.GetAncestorsAsync(id, generations, includeSpouses);
+        return tree is null ? NotFound() : Ok(tree);
     }
 
-    /// <summary>
-    /// Gets a person by their unique identifier.
-    /// </summary>
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetPerson(Guid id)
+    // GET: /api/people/5/descendants?generations=3&includeSpouses=true
+    [HttpGet("{id:int}/descendants")]
+    public async Task<ActionResult<TreeNodeDto>> GetDescendants(
+        int id, [FromQuery] int generations = 3, [FromQuery] bool includeSpouses = true)
     {
-        var person = await _db.People.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
-        return person is null ? NotFound() : Ok(person.ToReadDto());
+        if (generations < 0 || generations > 10) return BadRequest("Generations must be between 0 and 10.");
+        var tree = await _svc.GetDescendantsAsync(id, generations, includeSpouses);
+        return tree is null ? NotFound() : Ok(tree);
     }
 
-    /// <summary>
-    /// Creates a new person.
-    /// </summary>
-    [HttpPost]
-    public async Task<IActionResult> CreatePerson([FromBody] PersonCreateDto dto)
+    // GET: /api/people/5/tree?generations=3&includeSpouses=true
+    [HttpGet("{id:int}/tree")]
+    public async Task<ActionResult<TreeNodeDto>> GetFullTree(
+        int id, [FromQuery] int generations = 3, [FromQuery] bool includeSpouses = true)
     {
-        var p = new Person();
-        p.Apply(dto);
-        _db.People.Add(p);
-        await _db.SaveChangesAsync();
-        return Created($"/people/{p.Id}", p.ToReadDto());
-    }
-
-    /// <summary>
-    /// Updates an existing person.
-    /// </summary>
-    [HttpPatch("{id:guid}")]
-    public async Task<IActionResult> UpdatePerson(Guid id, [FromBody] PersonUpdateDto dto)
-    {
-        var p = await _db.People.FindAsync(id);
-        if (p is null) return NotFound();
-        p.Apply(dto);
-        await _db.SaveChangesAsync();
-        return Ok(p.ToReadDto());
-    }
-
-    /// <summary>
-    /// Deletes a person by their unique identifier.
-    /// </summary>
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeletePerson(Guid id)
-    {
-        var p = await _db.People.FindAsync(id);
-        if (p is null) return NotFound();
-        _db.People.Remove(p);
-        await _db.SaveChangesAsync();
-        return NoContent();
+        if (generations < 0 || generations > 10) return BadRequest("Generations must be between 0 and 10.");
+        var tree = await _svc.GetFullTreeAsync(id, generations, includeSpouses);
+        return tree is null ? NotFound() : Ok(tree);
     }
 }
