@@ -1,6 +1,6 @@
 ﻿namespace Genealogy.Api.Models;
 
-public enum Sex { Unknown = 0, Male = 1, Female = 2 }
+public enum Sex { Unknown, Male, Female, NonBinary }
 
 public class Person
 {
@@ -10,8 +10,13 @@ public class Person
     public Sex Sex { get; set; } = Sex.Unknown;
     public DateOnly? BirthDate { get; set; }
     public DateOnly? DeathDate { get; set; }
+    public string? BirthPlace { get; set; }
+    public string? DeathPlace { get; set; }
 
     // Biological parents
     public int? FatherId { get; set; }
     public int? MotherId { get; set; }
+
+    public ICollection<Person> Parents { get; set; } = new List<Person>();
+    public ICollection<Person> Children { get; set; } = new List<Person>();
 }

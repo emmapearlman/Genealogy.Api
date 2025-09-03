@@ -1,6 +1,10 @@
+using Genealogy.Api.Data;
 using Genealogy.Api.Dto;
+using Genealogy.Api.Dtos;
+using Genealogy.Api.Models;
 using Genealogy.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Genealogy.Api.Controllers;
 
@@ -9,7 +13,16 @@ namespace Genealogy.Api.Controllers;
 public class PeopleController : ControllerBase
 {
     private readonly IFamilyTreeService _svc;
-    public PeopleController(IFamilyTreeService svc) => _svc = svc;
+   // public PeopleController(IFamilyTreeService svc) => _svc = svc;
+
+    private readonly AppDbContext _db;
+
+    public PeopleController(AppDbContext db, IFamilyTreeService svc)
+    {
+        _db = db;
+        _svc = svc;
+    }
+
 
     // GET: /api/people/5
     [HttpGet("{id:int}")]
@@ -47,5 +60,51 @@ public class PeopleController : ControllerBase
         if (generations < 0 || generations > 10) return BadRequest("Generations must be between 0 and 10.");
         var tree = await _svc.GetFullTreeAsync(id, generations, includeSpouses);
         return tree is null ? NotFound() : Ok(tree);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<Person>> AddPerson(PersonCreateDto dto)
+    {
+        var person = new Person
+        {
+            GivenName = dto.GivenName.Trim(),
+            Surname = dto.Surname.Trim(),
+            Sex = dto.Sex,
+            BirthDate = dto.BirthDate,
+            BirthPlace = dto.BirthPlace,
+            DeathDate = dto.DeathDate,
+            DeathPlace = dto.DeathPlace
+        };
+
+        // Link parents
+        if (dto.ParentIds != null && dto.ParentIds.Any())
+        {
+            var parents = await _db.People
+                .Where(p => dto.ParentIds.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var parent in parents)
+            {
+                person.Parents.Add(parent);
+            }
+        }
+
+        // Link children
+        if (dto.ChildIds != null && dto.ChildIds.Any())
+        {
+            var children = await _db.People
+                .Where(p => dto.ChildIds.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var child in children)
+            {
+                person.Children.Add(child);
+            }
+        }
+
+        _db.People.Add(person);
+        await _db.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetPerson), new { id = person.Id }, person);
     }
 }

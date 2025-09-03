@@ -7,6 +7,8 @@ public class PersonDto
     public string Sex { get; set; } = "Unknown";
     public DateOnly? BirthDate { get; set; }
     public DateOnly? DeathDate { get; set; }
+    public string? BirthPlace { get; set; }
+    public string? DeathPlace { get; set; }
 }
 
 public class TreeNodeDto

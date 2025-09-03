@@ -8,6 +8,28 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     public DbSet<Person> People => Set<Person>();
     public DbSet<Marriage> Marriages => Set<Marriage>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Person>()
+            .HasMany(p => p.Parents)
+            .WithMany(p => p.Children)
+            .UsingEntity<Dictionary<string, object>>(
+                "ParentChild",
+                j => j
+                    .HasOne<Person>()
+                    .WithMany()
+                    .HasForeignKey("ParentId")
+                    .OnDelete(DeleteBehavior.Restrict),
+                j => j
+                    .HasOne<Person>()
+                    .WithMany()
+                    .HasForeignKey("ChildId")
+                    .OnDelete(DeleteBehavior.Restrict)
+            );
+    }
 }
 
 public static class DbSeeder
@@ -42,3 +64,4 @@ public static class DbSeeder
         db.SaveChanges();
     }
 }
+
