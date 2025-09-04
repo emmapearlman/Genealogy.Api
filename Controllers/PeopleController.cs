@@ -105,6 +105,56 @@ public class PeopleController : ControllerBase
         _db.People.Add(person);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetPerson), new { id = person.Id }, person);
+        // Create marriages
+        if (dto.SpouseIds != null && dto.SpouseIds.Any())
+        {
+            var spouses = await _db.People
+                .Where(p => dto.SpouseIds.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var spouse in spouses)
+            {
+                // Ensure consistent ordering for uniqueness
+                var (a, b) = person.Id.CompareTo(spouse.Id) < 0
+                    ? (person.Id, spouse.Id)
+                    : (spouse.Id, person.Id);
+
+                if (!await _db.Marriages.AnyAsync(m => m.Spouse1Id == a && m.Spouse2Id == b))
+                {
+                    _db.Marriages.Add(new Marriage
+                    {
+                        Spouse1Id = a,
+                        Spouse2Id = b
+                    });
+                }
+            }
+            await _db.SaveChangesAsync();
+        }
+
+        // Reload with marriages
+        var result = await _db.People
+            .AsNoTracking()
+            .Where(p => p.Id == person.Id)
+            .Select(p => new
+            {
+                p.Id,
+                p.GivenName,
+                p.Surname,
+                p.Sex,
+                Marriages = _db.Marriages
+                    .Where(m => m.Spouse1Id == p.Id || m.Spouse2Id == p.Id)
+                    .Select(m => new
+                    {
+                        MarriageId = m.Id,
+                        Spouse = m.Spouse1Id == p.Id
+                            ? _db.People.Where(sp => sp.Id == m.Spouse2Id).Select(sp => new { sp.Id, sp.GivenName, sp.Surname }).FirstOrDefault()
+                            : _db.People.Where(sp => sp.Id == m.Spouse1Id).Select(sp => new { sp.Id, sp.GivenName, sp.Surname }).FirstOrDefault()
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        return CreatedAtAction(nameof(GetPerson), new { id = person.Id }, result);
+
     }
 }

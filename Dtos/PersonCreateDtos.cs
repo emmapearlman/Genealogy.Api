@@ -12,5 +12,6 @@ public record PersonCreateDto(
     string? BirthPlace = null,
     string? DeathPlace = null,
     List<int>? ParentIds = null,
-    List<int>? ChildIds = null
+    List<int>? ChildIds = null,
+    List<int>? SpouseIds = null
 );
