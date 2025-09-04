@@ -10,6 +10,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlite("Data Source=genealogy.db"));
 
 builder.Services.AddScoped<TreeService>();
+builder.Services.AddScoped<GedcomExportService>();
 
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
@@ -23,6 +24,9 @@ builder.Services.AddControllers();
 // Add OpenAPI/Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Register GedcomApiClient (ensure you have a suitable HttpClient registration)
+builder.Services.AddHttpClient<GedcomApiClient>();
 
 var app = builder.Build();
 

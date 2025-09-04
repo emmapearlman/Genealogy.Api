@@ -4,3 +4,15 @@ GET {{Genealogy.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# Get all people
+GET {{Genealogy.Api_HostAddress}}/people
+Accept: application/json
+
+###
+
+# Export people as GEDCOM
+GET {{Genealogy.Api_HostAddress}}/people/gedcom
+Accept: text/plain
+
+###
