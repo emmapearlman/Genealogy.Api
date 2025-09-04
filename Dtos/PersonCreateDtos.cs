@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations;
 namespace Genealogy.Api.Dtos;
 
 public record PersonCreateDto(
-    [property: Required, MaxLength(100)] string GivenName,
-    [property: Required, MaxLength(100)] string Surname,
-    Sex Sex,
-    DateOnly? BirthDate,
-    string? BirthPlace,
-    DateOnly? DeathDate,
-    string? DeathPlace,
-    List<int>? ParentIds,
-    List<int>? ChildIds
+    [Required, MaxLength(100)] string GivenName,
+    [Required, MaxLength(100)] string Surname,
+    [Required] Sex Sex,
+    DateOnly? BirthDate = null,
+    DateOnly? DeathDate = null,
+    string? BirthPlace = null,
+    string? DeathPlace = null,
+    List<int>? ParentIds = null,
+    List<int>? ChildIds = null
 );

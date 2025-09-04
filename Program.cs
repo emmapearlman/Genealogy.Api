@@ -11,6 +11,8 @@ builder.Services.AddControllers()
     {
         // Safer for recursive DTOs
         o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        o.JsonSerializerOptions.MaxDepth = 64; // Optional: increase if needed
     });
 
 builder.Services.AddEndpointsApiExplorer();
