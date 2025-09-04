@@ -8,6 +8,7 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     public DbSet<Person> People => Set<Person>();
     public DbSet<Marriage> Marriages => Set<Marriage>();
+    public DbSet<ParentChild> ParentChildren => Set<ParentChild>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -20,3 +20,12 @@ public class Person
     public ICollection<Person> Parents { get; set; } = new List<Person>();
     public ICollection<Person> Children { get; set; } = new List<Person>();
 }
+
+
+public class ParentChild
+{
+    public int ParentId { get; set; }
+    public Person Parent { get; set; }
+    public int ChildId { get; set; }
+    public Person Child { get; set; }
+}

@@ -25,11 +25,52 @@ public class PeopleController : ControllerBase
 
 
     // GET: /api/people/5
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<PersonDto>> GetPerson(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<PersonDetailsDto>> GetPerson(int id)
     {
-        var person = await _svc.GetPersonAsync(id);
-        return person is null ? NotFound() : Ok(person);
+        var person = await _db.People
+            .Where(p => p.Id == id)
+            .Select(p => new PersonDetailsDto(
+                p.Id,
+                p.GivenName,
+                p.Surname,
+                p.Sex,
+
+                // Parents
+                _db.ParentChildren
+                    .Where(pc => pc.ChildId == p.Id)
+                    .Select(pc => new RelativeDto(
+                        pc.Parent.Id,
+                        pc.Parent.GivenName,
+                        pc.Parent.Surname
+                    ))
+                    .ToList(),
+
+                // Children
+                _db.ParentChildren
+                    .Where(pc => pc.ParentId == p.Id)
+                    .Select(pc => new RelativeDto(
+                        pc.Child.Id,
+                        pc.Child.GivenName,
+                        pc.Child.Surname
+                    ))
+                    .ToList(),
+
+                // Spouses (via marriages)
+                _db.Marriages
+                    .Where(m => m.Spouse1Id == p.Id || m.Spouse2Id == p.Id)
+                    .Select(m => m.Spouse1Id == p.Id
+                        ? new RelativeDto(m.Spouse2Id, m.Spouse2.GivenName, m.Spouse2.Surname)
+                        : new RelativeDto(m.Spouse1Id, m.Spouse1.GivenName, m.Spouse1.Surname)
+                    )
+                    .ToList()
+            ))
+            .FirstOrDefaultAsync();
+
+        if (person == null)
+            return NotFound();
+
+        return Ok(person);
     }
 
     // GET: /api/people/5/ancestors?generations=3&includeSpouses=true

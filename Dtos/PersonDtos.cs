@@ -1,5 +1,4 @@
 ﻿namespace Genealogy.Api.Dto;
-
 public class PersonDto
 {
     public int Id { get; set; }
@@ -24,3 +23,19 @@ public class TreeRequest
     public int Generations { get; set; } = 3;     // Depth in each direction
     public bool IncludeSpouses { get; set; } = true;
 }
+
+public record PersonDetailsDto(
+    int Id,
+    string GivenName,
+    string Surname,
+    Models.Sex Gender,
+    List<RelativeDto> Parents,
+    List<RelativeDto> Children,
+    List<RelativeDto> Spouses
+);
+
+public record RelativeDto(
+    int Id,
+    string GivenName,
+    string Surname
+);
